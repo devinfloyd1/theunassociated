@@ -37,7 +37,7 @@
             font-weight: bold;
             color: #333;
         }
-        #soundcloud-link {
+        #soundcloud-link, #instagram-link, #github-link {
             position: absolute;
             width: 120px;
             height: 120px;
@@ -61,18 +61,18 @@
         
         <a id="instagram-link" href="https://www.instagram.com/theunassociated/" target="_blank"></a>
         
-        <a href="https://github.com/yourusername" target="_blank">
-            <img class="icon" style="bottom: 30%; left: 35%;" src="/api/placeholder/60/60" alt="GitHub">
-        </a>
+        <a id="github-link" href="https://github.com/devinfloyd1" target="_blank"></a>
     </div>
 
     <script>
-    let scene, camera, renderer, cloud, instagramCamera;
+    let scene, camera, renderer, cloud, instagramCamera, githubCat;
     const clock = new THREE.Clock();
     let isHovered = false;
     let animationPaused = false;
     let isInstagramHovered = false;
     let instagramAnimationPaused = false;
+    let isGitHubHovered = false;
+    let githubAnimationPaused = false;
 
     function init() {
         scene = new THREE.Scene();
@@ -131,6 +131,26 @@
             updateLinkPosition(instagramCamera, 'instagram-link');
         });
 
+        // Load GitHub cat with original iconscout color
+        loader.load('cat.glb', (gltf) => {
+            githubCat = gltf.scene;
+            githubCat.traverse((child) => {
+                if (child.isMesh) {
+                    child.material = new THREE.MeshStandardMaterial({
+                        color: 0x6e5494,  // GitHub purple color from Iconscout
+                        metalness: 0.4,
+                        roughness: 0.3,
+                        emissive: 0x4a3d8f,
+                        emissiveIntensity: 0.2
+                    });
+                }
+            });
+            githubCat.scale.set(30, 30, 30);
+            githubCat.position.set(-50, 100, 0);
+            scene.add(githubCat);
+            updateLinkPosition(githubCat, 'github-link');
+        });
+
         camera.position.z = 150;
         animate();
     }
@@ -144,6 +164,7 @@
 
         raycaster.setFromCamera(mouse, camera);
         
+        // SoundCloud cloud hover effects
         if (cloud) {
             const cloudIntersects = raycaster.intersectObjects(cloud.children, true);
             if (cloudIntersects.length > 0) {
@@ -169,6 +190,7 @@
             }
         }
 
+        // Instagram camera hover effects
         if (instagramCamera) {
             const instaIntersects = raycaster.intersectObjects(instagramCamera.children, true);
             if (instaIntersects.length > 0) {
@@ -195,6 +217,34 @@
                 }
             }
         }
+
+        // GitHub cat hover effects
+        if (githubCat) {
+            const githubIntersects = raycaster.intersectObjects(githubCat.children, true);
+            if (githubIntersects.length > 0) {
+                if (!isGitHubHovered) {
+                    isGitHubHovered = true;
+                    githubAnimationPaused = true;
+                    githubCat.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material.emissiveIntensity = 0.8;
+                            child.material.metalness = 0.9;
+                        }
+                    });
+                }
+            } else {
+                if (isGitHubHovered) {
+                    isGitHubHovered = false;
+                    githubAnimationPaused = false;
+                    githubCat.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material.emissiveIntensity = 0.2;
+                            child.material.metalness = 0.4;
+                        }
+                    });
+                }
+            }
+        }
     });
 
     function updateLinkPosition(model, linkId) {
@@ -215,8 +265,8 @@
         requestAnimationFrame(animate);
         const time = clock.getElapsedTime();
         
-        if (cloud && instagramCamera) {
-            let cloudNewX, cloudNewY, instaNewX, instaNewY;
+        if (cloud && instagramCamera && githubCat) {
+            let cloudNewX, cloudNewY, instaNewX, instaNewY, githubNewX, githubNewY;
             
             // Slower movement speeds
             if (!animationPaused) {
@@ -237,6 +287,16 @@
                 instaNewY = instagramCamera.position.y;
             }
 
+            // GitHub cat movement
+            if (!githubAnimationPaused) {
+                githubNewX = Math.sin(time * 0.25) * 150 + Math.sin(time * 0.35) * 50;
+                githubNewY = Math.cos(time * 0.2) * 80 + Math.sin(time * 0.3) * 40;
+                githubCat.rotation.y = Math.cos(time * 0.25) * Math.PI / 4;
+            } else {
+                githubNewX = githubCat.position.x;
+                githubNewY = githubCat.position.y;
+            }
+
             // Boundary constraints
             const bounds = {
                 minX: -window.innerWidth / 4,
@@ -245,7 +305,7 @@
                 maxY: window.innerHeight / 4
             };
 
-            // Apply bounds with bounce effect
+            // Apply bounds with bounce effect for each object
             if (!animationPaused) {
                 if (cloudNewX < bounds.minX) cloudNewX = bounds.minX + Math.abs(cloudNewX - bounds.minX);
                 if (cloudNewX > bounds.maxX) cloudNewX = bounds.maxX - Math.abs(cloudNewX - bounds.maxX);
@@ -260,25 +320,46 @@
                 if (instaNewY > bounds.maxY) instaNewY = bounds.maxY - Math.abs(instaNewY - bounds.maxY);
             }
 
-            // Collision detection
-            const dx = cloudNewX - instaNewX;
-            const dy = cloudNewY - instaNewY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            const minDistance = 100; // Increased for larger models
-            
-            if (distance < minDistance) {
-                const angle = Math.atan2(dy, dx);
-                const repulsionForce = (minDistance - distance) / minDistance;
-                
-                if (!animationPaused) {
-                    cloudNewX += Math.cos(angle) * repulsionForce * 20;
-                    cloudNewY += Math.sin(angle) * repulsionForce * 20;
-                }
-                
-                if (!instagramAnimationPaused) {
-                    instaNewX -= Math.cos(angle) * repulsionForce * 20;
-                    instaNewY -= Math.sin(angle) * repulsionForce * 20;
+            if (!githubAnimationPaused) {
+                if (githubNewX < bounds.minX) githubNewX = bounds.minX + Math.abs(githubNewX - bounds.minX);
+                if (githubNewX > bounds.maxX) githubNewX = bounds.maxX - Math.abs(githubNewX - bounds.maxX);
+                if (githubNewY < bounds.minY) githubNewY = bounds.minY + Math.abs(githubNewY - bounds.minY);
+                if (githubNewY > bounds.maxY) githubNewY = bounds.maxY - Math.abs(githubNewY - bounds.maxY);
+            }
+
+            // Complex collision detection between all three objects
+            const collisionObjects = [
+                { obj: cloud, newX: cloudNewX, newY: cloudNewY, paused: animationPaused },
+                { obj: instagramCamera, newX: instaNewX, newY: instaNewY, paused: instagramAnimationPaused },
+                { obj: githubCat, newX: githubNewX, newY: githubNewY, paused: githubAnimationPaused }
+            ];
+
+            // Collision detection and repulsion
+            for (let i = 0; i < collisionObjects.length; i++) {
+                for (let j = i + 1; j < collisionObjects.length; j++) {
+                    const obj1 = collisionObjects[i];
+                    const obj2 = collisionObjects[j];
+                    
+                    const dx = obj1.newX - obj2.newX;
+                    const dy = obj1.newY - obj2.newY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    const minDistance = 150; // Increased for larger models
+                    
+                    if (distance < minDistance) {
+                        const angle = Math.atan2(dy, dx);
+                        const repulsionForce = (minDistance - distance) / minDistance;
+                        
+                        if (!obj1.paused) {
+                            obj1.newX += Math.cos(angle) * repulsionForce * 20;
+                            obj1.newY += Math.sin(angle) * repulsionForce * 20;
+                        }
+                        
+                        if (!obj2.paused) {
+                            obj2.newX -= Math.cos(angle) * repulsionForce * 20;
+                            obj2.newY -= Math.sin(angle) * repulsionForce * 20;
+                        }
+                    }
                 }
             }
             
@@ -293,6 +374,12 @@
                 instagramCamera.position.x = instaNewX;
                 instagramCamera.position.y = instaNewY;
                 updateLinkPosition(instagramCamera, 'instagram-link');
+            }
+            
+            if (!githubAnimationPaused) {
+                githubCat.position.x = githubNewX;
+                githubCat.position.y = githubNewY;
+                updateLinkPosition(githubCat, 'github-link');
             }
         }
         
