@@ -5,24 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Devin Floyd - Portfolio</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/MotionPathPlugin.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
         body {
             margin: 0;
             height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #f5f5f5; /* Changed to off-white */
+            background: #f5f5f5;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             overflow: hidden;
-            perspective: 1000px;
+        }
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
         }
         .container {
             position: relative;
             width: 100vw;
             height: 100vh;
-            transform-style: preserve-3d;
+            z-index: 2;
+            pointer-events: none;
         }
         .name {
             position: absolute;
@@ -33,45 +37,19 @@
             font-weight: bold;
             color: #333;
         }
-        .icon {
+        #soundcloud-link {
             position: absolute;
-            cursor: pointer;
-            transition: transform 0.3s ease;
-        }
-        .icon:hover {
-            transform: scale(1.1) rotate(0deg) !important;
-        }
-        #soundcloud {
             width: 120px;
             height: 120px;
-            transform-style: preserve-3d;
-            backface-visibility: visible;
-            transform-origin: center center -60px; /* Add depth for 3D */
-            filter: sepia(100%) hue-rotate(-30deg) saturate(300%) brightness(140%);
-            -webkit-filter: sepia(100%) hue-rotate(-30deg) saturate(300%) brightness(140%);
+            cursor: pointer;
+            pointer-events: auto;
         }
-
-        #soundcloud:hover {
-            animation: glowPulse 2s infinite;
-        }
-
-        @keyframes glowPulse {
-            0% { filter: sepia(100%) hue-rotate(-30deg) saturate(300%) brightness(140%); }
-            50% { filter: sepia(100%) hue-rotate(-30deg) saturate(400%) brightness(160%); }
-            100% { filter: sepia(100%) hue-rotate(-30deg) saturate(300%) brightness(140%); }
-        }
-        
-        #instagram {
+        .icon {
+            position: absolute;
             width: 60px;
             height: 60px;
-            top: 40%;
-            right: 25%;
-        }
-        #github {
-            width: 60px;
-            height: 60px;
-            bottom: 30%;
-            left: 35%;
+            cursor: pointer;
+            pointer-events: auto;
         }
     </style>
 </head>
@@ -79,77 +57,104 @@
     <div class="container">
         <h1 class="name">Devin Floyd</h1>
         
-        <a href="https://soundcloud.com/devinfloyd?utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing" target="_blank">
-            <img id="soundcloud" class="icon" src="cloud.png" alt="SoundCloud">
-        </a>
+        <a id="soundcloud-link" href="https://soundcloud.com/devinfloyd?utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing" target="_blank"></a>
         
         <a href="https://instagram.com/yourusername" target="_blank">
-            <img id="instagram" class="icon" src="/api/placeholder/60/60" alt="Instagram">
+            <img class="icon" style="top: 40%; right: 25%;" src="/api/placeholder/60/60" alt="Instagram">
         </a>
         
         <a href="https://github.com/yourusername" target="_blank">
-            <img id="github" class="icon" src="/api/placeholder/60/60" alt="GitHub">
+            <img class="icon" style="bottom: 30%; left: 35%;" src="/api/placeholder/60/60" alt="GitHub">
         </a>
     </div>
+
     <script>
-        gsap.registerPlugin(MotionPathPlugin);
+        let scene, camera, renderer, cloud;
+        const clock = new THREE.Clock();
 
-        // Set initial position
-        gsap.set("#soundcloud", {
-            xPercent: -50,
-            yPercent: -50,
-            transformPerspective: 1000,
-        });
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0xf5f5f5, 1); // Matches body background
+            document.body.insertBefore(renderer.domElement, document.body.firstChild);
 
-        // Create a timeline for combined animations
-        const tl = gsap.timeline({repeat: -1});
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 10);
+            scene.add(directionalLight);
 
-        // Add the floating movement to the timeline
-        tl.to("#soundcloud", {
-            duration: 20,
-            motionPath: {
-                path: [
-                    {x: 0, y: 0},
-                    {x: window.innerWidth/3, y: -window.innerHeight/3},
-                    {x: window.innerWidth/2, y: 0},
-                    {x: window.innerWidth/3, y: window.innerHeight/3},
-                    {x: 0, y: window.innerHeight/2},
-                    {x: -window.innerWidth/3, y: window.innerHeight/3},
-                    {x: -window.innerWidth/2, y: 0},
-                    {x: -window.innerWidth/3, y: -window.innerHeight/3},
-                    {x: 0, y: 0}
-                ],
-                curviness: 1.5
+            // Load the cloud model with the correct filename
+            const loader = new THREE.GLTFLoader();
+            loader.load('cloud-8515988.glb', (gltf) => {
+                cloud = gltf.scene;
+                // Apply orange color material
+                cloud.traverse((child) => {
+                    if (child.isMesh) {
+                        child.material.color.setHex(0xff8c42); // Orange color
+                    }
+                });
+                cloud.scale.set(50, 50, 50);
+                scene.add(cloud);
+
+                updateLinkPosition();
+            }, 
+            // Add loading progress
+            (xhr) => {
+                console.log((xhr.loaded / xhr.total * 100) + '% loaded');
             },
-            ease: "none"
-        });
+            // Add error handling
+            (error) => {
+                console.error('An error happened loading the model:', error);
+            });
 
-        // Add continuous rotation
-        gsap.to("#soundcloud", {
-            duration: 8,
-            rotationY: 360,
-            repeat: -1,
-            ease: "none"
-        });
+            camera.position.z = 200;
+            animate();
+        }
 
-        // Regular floating animation for other icons
-        gsap.to(['#instagram', '#github'], {
-            y: "random(-20, 20)",
-            x: "random(-20, 20)",
-            duration: "random(2, 4)",
-            repeat: -1,
-            yoyo: true,
-            ease: "none",
-            stagger: {
-                amount: 2,
-                from: "random"
+        function updateLinkPosition() {
+            if (cloud) {
+                const vector = new THREE.Vector3();
+                cloud.getWorldPosition(vector);
+                vector.project(camera);
+                
+                const link = document.getElementById('soundcloud-link');
+                const x = (vector.x * .5 + .5) * window.innerWidth;
+                const y = (-(vector.y * .5) + .5) * window.innerHeight;
+                
+                link.style.transform = `translate(${x - 60}px, ${y - 60}px)`;
             }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (cloud) {
+                const time = clock.getElapsedTime();
+                
+                // Smooth rotation
+                cloud.rotation.y += 0.01;
+                
+                // Floating movement
+                cloud.position.x = Math.sin(time * 0.5) * 100;
+                cloud.position.y = Math.cos(time * 0.3) * 50;
+                
+                updateLinkPosition();
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // Add resize handler to update path on window resize
-        window.addEventListener('resize', () => {
-            tl.invalidate().restart();
-        });
+        init();
     </script>
 </body>
 </html>
