@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Devin Floyd - Portfolio</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/MotionPathPlugin.min.js"></script>
     <style>
         body {
             margin: 0;
@@ -12,7 +13,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: white;
+            background: #f5f5f5; /* Changed to off-white */
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             overflow: hidden;
             perspective: 1000px;
@@ -43,11 +44,9 @@
         #soundcloud {
             width: 120px;
             height: 120px;
-            top: 30%;
-            left: 25%;
             transform-style: preserve-3d;
             backface-visibility: visible;
-            /* Adjusted for more vibrant orange */
+            transform-origin: center center -60px; /* Add depth for 3D */
             filter: sepia(100%) hue-rotate(-30deg) saturate(300%) brightness(140%);
             -webkit-filter: sepia(100%) hue-rotate(-30deg) saturate(300%) brightness(140%);
         }
@@ -93,37 +92,44 @@
         </a>
     </div>
     <script>
-        // Create a continuous spinning animation
-        gsap.to('#soundcloud', {
+        gsap.registerPlugin(MotionPathPlugin);
+
+        // Set initial position
+        gsap.set("#soundcloud", {
+            xPercent: -50,
+            yPercent: -50,
+            transformPerspective: 1000,
+        });
+
+        // Create a timeline for combined animations
+        const tl = gsap.timeline({repeat: -1});
+
+        // Add the floating movement to the timeline
+        tl.to("#soundcloud", {
+            duration: 20,
+            motionPath: {
+                path: [
+                    {x: 0, y: 0},
+                    {x: window.innerWidth/3, y: -window.innerHeight/3},
+                    {x: window.innerWidth/2, y: 0},
+                    {x: window.innerWidth/3, y: window.innerHeight/3},
+                    {x: 0, y: window.innerHeight/2},
+                    {x: -window.innerWidth/3, y: window.innerHeight/3},
+                    {x: -window.innerWidth/2, y: 0},
+                    {x: -window.innerWidth/3, y: -window.innerHeight/3},
+                    {x: 0, y: 0}
+                ],
+                curviness: 1.5
+            },
+            ease: "none"
+        });
+
+        // Add continuous rotation
+        gsap.to("#soundcloud", {
             duration: 8,
             rotationY: 360,
             repeat: -1,
-            ease: "none",
-            transformPerspective: 1000,
-            transformStyle: "preserve-3d"
-        });
-
-        // Larger, more dynamic floating movement
-        gsap.to('#soundcloud', {
-            duration: 40,
-            motionPath: {
-                path: [
-                    {x: 0, y: 0},         // Center
-                    {x: 400, y: -200},    // Top right
-                    {x: 600, y: 0},       // Far right
-                    {x: 400, y: 200},     // Bottom right
-                    {x: 0, y: 300},       // Bottom
-                    {x: -400, y: 200},    // Bottom left
-                    {x: -600, y: 0},      // Far left
-                    {x: -400, y: -200},   // Top left
-                    {x: 0, y: -300},      // Top
-                    {x: 0, y: 0}          // Back to center
-                ],
-                curviness: 2,
-                autoRotate: false
-            },
-            ease: "power1.inOut",
-            repeat: -1
+            ease: "none"
         });
 
         // Regular floating animation for other icons
@@ -138,6 +144,11 @@
                 amount: 2,
                 from: "random"
             }
+        });
+
+        // Add resize handler to update path on window resize
+        window.addEventListener('resize', () => {
+            tl.invalidate().restart();
         });
     </script>
 </body>
