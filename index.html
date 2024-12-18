@@ -71,6 +71,9 @@
     <script>
     let scene, camera, renderer, cloud;
     const clock = new THREE.Clock();
+    // Add these new variables
+    let isHovered = false;
+    let animationPaused = false;
 
     function init() {
         scene = new THREE.Scene();
@@ -80,24 +83,28 @@
         renderer.setClearColor(0xf5f5f5, 1);
         document.body.insertBefore(renderer.domElement, document.body.firstChild);
 
-        // Lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
         directionalLight.position.set(10, 10, 10);
         scene.add(directionalLight);
 
-        // Load the cloud model
         const loader = new THREE.GLTFLoader();
         loader.load('cloud-8515988.glb', (gltf) => {
             cloud = gltf.scene;
             cloud.traverse((child) => {
                 if (child.isMesh) {
-                    child.material.color.setHex(0xff8c42);
+                    // Updated material with SoundCloud orange
+                    child.material = new THREE.MeshStandardMaterial({
+                        color: 0xff5500,  // SoundCloud orange
+                        metalness: 0.3,
+                        roughness: 0.4,
+                        emissive: 0xff3300,
+                        emissiveIntensity: 0.2
+                    });
                 }
             });
-            // Made the cloud smaller
-            cloud.scale.set(5, 5, 5);;
+            cloud.scale.set(5, 5, 5);
             scene.add(cloud);
             updateLinkPosition();
         }, 
@@ -108,10 +115,45 @@
             console.error('An error happened loading the model:', error);
         });
 
-        // Moved camera closer since cloud is smaller
         camera.position.z = 150;
         animate();
     }
+
+    // Add hover detection
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    document.addEventListener('mousemove', (event) => {
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+        if (cloud) {
+            const intersects = raycaster.intersectObjects(cloud.children, true);
+            
+            if (intersects.length > 0) {
+                if (!isHovered) {
+                    isHovered = true;
+                    animationPaused = true;
+                    cloud.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material.emissiveIntensity = 0.6;
+                        }
+                    });
+                }
+            } else {
+                if (isHovered) {
+                    isHovered = false;
+                    animationPaused = false;
+                    cloud.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material.emissiveIntensity = 0.2;
+                        }
+                    });
+                }
+            }
+        }
+    });
 
     function updateLinkPosition() {
         if (cloud) {
@@ -130,20 +172,18 @@
     function animate() {
         requestAnimationFrame(animate);
         
-        if (cloud) {
+        if (cloud && !animationPaused) {
             const time = clock.getElapsedTime();
             
-            // Slower rotation
             cloud.rotation.y += 0.005;
             
-            // More complex floating movement using multiple sine waves
             cloud.position.x = 
-                Math.sin(time * 0.3) * 150 + // Main horizontal movement
-                Math.sin(time * 0.7) * 50;   // Secondary movement
+                Math.sin(time * 0.3) * 150 +
+                Math.sin(time * 0.7) * 50;
                 
             cloud.position.y = 
-                Math.cos(time * 0.4) * 80 +  // Main vertical movement
-                Math.sin(time * 0.6) * 40;   // Secondary movement
+                Math.cos(time * 0.4) * 80 +
+                Math.sin(time * 0.6) * 40;
             
             updateLinkPosition();
         }
