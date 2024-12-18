@@ -60,6 +60,8 @@
     let animationPaused = false;
     let isInstagramHovered = false;
     let instagramAnimationPaused = false;
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
 
     function init() {
         scene = new THREE.Scene();
@@ -156,6 +158,20 @@
         }
     }
 
+    function onDocumentMouseClick(event) {
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+
+        if (instagramCamera) {
+            const intersects = raycaster.intersectObjects(instagramCamera.children, true);
+            if (intersects.length > 0) {
+                window.open('https://www.instagram.com/theunassociated/', '_blank');
+            }
+        }
+    }
+
     function animate() {
         requestAnimationFrame(animate);
         const time = clock.getElapsedTime();
@@ -209,6 +225,8 @@
         githubLink.style.pointerEvents = 'auto';
         document.body.appendChild(githubLink);
     });
+
+    document.addEventListener('click', onDocumentMouseClick);
 
     init();
     </script>
