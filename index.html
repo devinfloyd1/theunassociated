@@ -44,178 +44,126 @@
             cursor: pointer;
             pointer-events: auto;
         }
-        .icon {
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            cursor: pointer;
-            pointer-events: auto;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1 class="name">Devin Floyd</h1>
-        
         <a id="soundcloud-link" href="https://soundcloud.com/devinfloyd?utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing" target="_blank"></a>
-        
         <a id="instagram-link" href="https://www.instagram.com/theunassociated/" target="_blank"></a>
-        
         <a id="github-link" href="https://github.com/devinfloyd1" target="_blank"></a>
     </div>
 
     <script>
     let scene, camera, renderer, cloud, instagramCamera, githubCat;
     const clock = new THREE.Clock();
-    let isHovered = false;
-    let animationPaused = false;
+    const bounds = {
+        minX: -window.innerWidth / 2,
+        maxX: window.innerWidth / 2,
+        minY: -window.innerHeight / 2,
+        maxY: window.innerHeight / 2
+    };
 
     function init() {
         scene = new THREE.Scene();
         camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setClearColor(0xf5f5f5, 1);
-        document.body.insertBefore(renderer.domElement, document.body.firstChild);
+        document.body.appendChild(renderer.domElement);
 
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(10, 10, 10);
-        scene.add(directionalLight);
 
         const loader = new THREE.GLTFLoader();
 
-        // Load SoundCloud cloud
         loader.load('cloud-8515988.glb', (gltf) => {
             cloud = gltf.scene;
             cloud.traverse((child) => {
                 if (child.isMesh) {
-                    child.material = new THREE.MeshStandardMaterial({
-                        color: 0xff5500,
-                        metalness: 0.3,
-                        roughness: 0.4,
-                        emissive: 0xff3300,
-                        emissiveIntensity: 0.2
-                    });
+                    child.material.color.set(0xff5500);
                 }
             });
             cloud.scale.set(5, 5, 5);
-            cloud.position.set(-100, 50, 0);
+            cloud.position.set(randomPosition(bounds.minX, bounds.maxX), randomPosition(bounds.minY, bounds.maxY), 0);
             scene.add(cloud);
-            updateLinkPosition(cloud, 'soundcloud-link');
         });
 
-        // Load Instagram camera
         loader.load('camera1.glb', (gltf) => {
             instagramCamera = gltf.scene;
             instagramCamera.traverse((child) => {
                 if (child.isMesh) {
-                    child.material = new THREE.MeshStandardMaterial({
-                        color: 0x00a2ff,
-                        metalness: 0.7,
-                        roughness: 0.2,
-                        emissive: 0x0066cc,
-                        emissiveIntensity: 0.2
-                    });
+                    child.material.color.set(0x00a2ff);
                 }
             });
-            instagramCamera.scale.set(30, 30, 30);
-            instagramCamera.position.set(100, -50, 0);
+            instagramCamera.scale.set(10, 10, 10);
+            instagramCamera.position.set(randomPosition(bounds.minX, bounds.maxX), randomPosition(bounds.minY, bounds.maxY), 0);
             scene.add(instagramCamera);
-            updateLinkPosition(instagramCamera, 'instagram-link');
         });
 
-        // Load GitHub cat
         loader.load('cat.glb', (gltf) => {
             githubCat = gltf.scene;
             githubCat.traverse((child) => {
                 if (child.isMesh) {
                     child.material = new THREE.MeshStandardMaterial({
-                        color: 0x000000,
-                        metalness: 0.5,
+                        color: 0x800080, // Purple
+                        metalness: 0.8,
                         roughness: 0.5,
-                        emissive: 0x333333,
-                        emissiveIntensity: 0.1
+                        emissive: 0xff00ff,
+                        emissiveIntensity: 0.3
                     });
                 }
             });
-            githubCat.scale.set(10, 10, 10);
-            githubCat.position.set(0, -50, 0);
+            githubCat.scale.set(15, 15, 15); // Slightly larger
+            githubCat.position.set(randomPosition(bounds.minX, bounds.maxX), randomPosition(bounds.minY, bounds.maxY), 0);
             scene.add(githubCat);
-            updateLinkPosition(githubCat, 'github-link');
         });
 
         camera.position.z = 150;
         animate();
     }
 
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
+    function randomPosition(min, max) {
+        return Math.random() * (max - min) + min;
+    }
 
-    document.addEventListener('mousemove', (event) => {
-        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    function checkCollision(obj1, obj2) {
+        const dx = obj1.position.x - obj2.position.x;
+        const dy = obj1.position.y - obj2.position.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance < 50; // Minimum distance before collision
+    }
 
-        raycaster.setFromCamera(mouse, camera);
+    function resolveCollision(obj1, obj2) {
+        const dx = obj1.position.x - obj2.position.x;
+        const dy = obj1.position.y - obj2.position.y;
+        const angle = Math.atan2(dy, dx);
 
-        const handleHover = (model, isModelHovered, emissiveIntensity) => {
-            const intersects = raycaster.intersectObjects(model.children, true);
-            if (intersects.length > 0) {
-                model.traverse((child) => {
-                    if (child.isMesh) {
-                        child.material.emissiveIntensity = emissiveIntensity;
-                    }
-                });
-                return true;
-            } else {
-                model.traverse((child) => {
-                    if (child.isMesh) {
-                        child.material.emissiveIntensity = 0.2;
-                    }
-                });
-                return false;
-            }
-        };
+        obj1.position.x += Math.cos(angle) * 5;
+        obj1.position.y += Math.sin(angle) * 5;
 
-        if (cloud) isHovered = handleHover(cloud, isHovered, 0.6);
-        if (instagramCamera) isHovered = handleHover(instagramCamera, isHovered, 0.8);
-        if (githubCat) isHovered = handleHover(githubCat, isHovered, 0.4);
-    });
-
-    function updateLinkPosition(model, linkId) {
-        if (model) {
-            const vector = new THREE.Vector3();
-            model.getWorldPosition(vector);
-            vector.project(camera);
-            
-            const link = document.getElementById(linkId);
-            const x = (vector.x * .5 + .5) * window.innerWidth;
-            const y = (-(vector.y * .5) + .5) * window.innerHeight;
-            
-            link.style.transform = `translate(${x - 10}px, ${y - 10}px)`;
-        }
+        obj2.position.x -= Math.cos(angle) * 5;
+        obj2.position.y -= Math.sin(angle) * 5;
     }
 
     function animate() {
         requestAnimationFrame(animate);
-        const time = clock.getElapsedTime();
 
-        const animateModel = (model, xSpeed, ySpeed, zRotation) => {
-            if (model) {
-                model.position.x = Math.sin(time * xSpeed) * 100;
-                model.position.y = Math.cos(time * ySpeed) * 50;
-                model.rotation.y += zRotation;
-            }
-        };
+        if (cloud && instagramCamera && githubCat) {
+            const models = [cloud, instagramCamera, githubCat];
+            models.forEach((model) => {
+                model.position.x += Math.random() * 2 - 1;
+                model.position.y += Math.random() * 2 - 1;
 
-        animateModel(cloud, 0.15, 0.2, 0.005);
-        animateModel(instagramCamera, 0.2, 0.15, 0.01);
-        animateModel(githubCat, 0.25, 0.2, 0.01);
+                // Bounce within bounds
+                if (model.position.x < bounds.minX || model.position.x > bounds.maxX) model.position.x *= -1;
+                if (model.position.y < bounds.minY || model.position.y > bounds.maxY) model.position.y *= -1;
+            });
 
-        updateLinkPosition(cloud, 'soundcloud-link');
-        updateLinkPosition(instagramCamera, 'instagram-link');
-        updateLinkPosition(githubCat, 'github-link');
+            // Check collisions
+            if (checkCollision(cloud, instagramCamera)) resolveCollision(cloud, instagramCamera);
+            if (checkCollision(cloud, githubCat)) resolveCollision(cloud, githubCat);
+            if (checkCollision(instagramCamera, githubCat)) resolveCollision(instagramCamera, githubCat);
+        }
 
         renderer.render(scene, camera);
     }
