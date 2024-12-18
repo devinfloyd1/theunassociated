@@ -69,92 +69,95 @@
     </div>
 
     <script>
-        let scene, camera, renderer, cloud;
-        const clock = new THREE.Clock();
+    let scene, camera, renderer, cloud;
+    const clock = new THREE.Clock();
 
-        function init() {
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setClearColor(0xf5f5f5, 1); // Matches body background
-            document.body.insertBefore(renderer.domElement, document.body.firstChild);
+    function init() {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0xf5f5f5, 1);
+        document.body.insertBefore(renderer.domElement, document.body.firstChild);
 
-            // Lighting
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(10, 10, 10);
-            scene.add(directionalLight);
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(10, 10, 10);
+        scene.add(directionalLight);
 
-            // Load the cloud model with the correct filename
-            const loader = new THREE.GLTFLoader();
-            loader.load('cloud-8515988.glb', (gltf) => {
-                cloud = gltf.scene;
-                // Apply orange color material
-                cloud.traverse((child) => {
-                    if (child.isMesh) {
-                        child.material.color.setHex(0xff8c42); // Orange color
-                    }
-                });
-                cloud.scale.set(50, 50, 50);
-                scene.add(cloud);
-
-                updateLinkPosition();
-            }, 
-            // Add loading progress
-            (xhr) => {
-                console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-            },
-            // Add error handling
-            (error) => {
-                console.error('An error happened loading the model:', error);
+        // Load the cloud model
+        const loader = new THREE.GLTFLoader();
+        loader.load('cloud-8515988.glb', (gltf) => {
+            cloud = gltf.scene;
+            cloud.traverse((child) => {
+                if (child.isMesh) {
+                    child.material.color.setHex(0xff8c42);
+                }
             });
-
-            camera.position.z = 200;
-            animate();
-        }
-
-        function updateLinkPosition() {
-            if (cloud) {
-                const vector = new THREE.Vector3();
-                cloud.getWorldPosition(vector);
-                vector.project(camera);
-                
-                const link = document.getElementById('soundcloud-link');
-                const x = (vector.x * .5 + .5) * window.innerWidth;
-                const y = (-(vector.y * .5) + .5) * window.innerHeight;
-                
-                link.style.transform = `translate(${x - 60}px, ${y - 60}px)`;
-            }
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            
-            if (cloud) {
-                const time = clock.getElapsedTime();
-                
-                // Smooth rotation
-                cloud.rotation.y += 0.01;
-                
-                // Floating movement
-                cloud.position.x = Math.sin(time * 0.5) * 100;
-                cloud.position.y = Math.cos(time * 0.3) * 50;
-                
-                updateLinkPosition();
-            }
-            
-            renderer.render(scene, camera);
-        }
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            // Made the cloud smaller
+            cloud.scale.set(20, 20, 20);
+            scene.add(cloud);
+            updateLinkPosition();
+        }, 
+        (xhr) => {
+            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+        },
+        (error) => {
+            console.error('An error happened loading the model:', error);
         });
 
-        init();
-    </script>
+        // Moved camera closer since cloud is smaller
+        camera.position.z = 150;
+        animate();
+    }
+
+    function updateLinkPosition() {
+        if (cloud) {
+            const vector = new THREE.Vector3();
+            cloud.getWorldPosition(vector);
+            vector.project(camera);
+            
+            const link = document.getElementById('soundcloud-link');
+            const x = (vector.x * .5 + .5) * window.innerWidth;
+            const y = (-(vector.y * .5) + .5) * window.innerHeight;
+            
+            link.style.transform = `translate(${x - 30}px, ${y - 30}px)`;
+        }
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        
+        if (cloud) {
+            const time = clock.getElapsedTime();
+            
+            // Slower rotation
+            cloud.rotation.y += 0.005;
+            
+            // More complex floating movement using multiple sine waves
+            cloud.position.x = 
+                Math.sin(time * 0.3) * 150 + // Main horizontal movement
+                Math.sin(time * 0.7) * 50;   // Secondary movement
+                
+            cloud.position.y = 
+                Math.cos(time * 0.4) * 80 +  // Main vertical movement
+                Math.sin(time * 0.6) * 40;   // Secondary movement
+            
+            updateLinkPosition();
+        }
+        
+        renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    init();
+</script>
 </body>
 </html>
