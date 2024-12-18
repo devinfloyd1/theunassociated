@@ -105,27 +105,28 @@
                 }
             });
             cloud.scale.set(5, 5, 5);
-            cloud.position.set(-100, 50, 0); // Start left side
+            cloud.position.set(-100, 50, 0);
             scene.add(cloud);
             updateLinkPosition(cloud, 'soundcloud-link');
         });
 
-        // Load Instagram camera with its original colors but add emissive for hover
+        // Load Instagram camera with futuristic blue material
         loader.load('camera1.glb', (gltf) => {
             instagramCamera = gltf.scene;
             instagramCamera.traverse((child) => {
                 if (child.isMesh) {
-                    const originalMaterial = child.material;
                     child.material = new THREE.MeshStandardMaterial({
-                        metalness: 0.3,
-                        roughness: 0.4,
-                        emissive: 0xffffff,
-                        emissiveIntensity: 0.2
+                        color: 0x00a2ff,  // Bright blue base
+                        metalness: 0.7,    // Increased metalness
+                        roughness: 0.2,    // Lower roughness for shine
+                        emissive: 0x0066cc, // Darker blue emissive
+                        emissiveIntensity: 0.2,
+                        envMapIntensity: 1.5
                     });
                 }
             });
-            instagramCamera.scale.set(5, 5, 5);
-            instagramCamera.position.set(100, -50, 0); // Start right side
+            instagramCamera.scale.set(8, 8, 8);
+            instagramCamera.position.set(100, -50, 0);
             scene.add(instagramCamera);
             updateLinkPosition(instagramCamera, 'instagram-link');
         });
@@ -178,7 +179,8 @@
                     instagramAnimationPaused = true;
                     instagramCamera.traverse((child) => {
                         if (child.isMesh) {
-                            child.material.emissiveIntensity = 0.6;
+                            child.material.emissiveIntensity = 0.8;
+                            child.material.metalness = 0.9;
                         }
                     });
                 }
@@ -189,6 +191,7 @@
                     instagramCamera.traverse((child) => {
                         if (child.isMesh) {
                             child.material.emissiveIntensity = 0.2;
+                            child.material.metalness = 0.7;
                         }
                     });
                 }
@@ -214,7 +217,6 @@
         requestAnimationFrame(animate);
         const time = clock.getElapsedTime();
         
-        // Calculate new positions
         if (cloud && instagramCamera) {
             let cloudNewX, cloudNewY, instaNewX, instaNewY;
             
@@ -230,23 +232,19 @@
             if (!instagramAnimationPaused) {
                 instaNewX = Math.sin(time * 0.4 + Math.PI) * 150 + Math.sin(time * 0.6 + Math.PI) * 50;
                 instaNewY = Math.cos(time * 0.3 + Math.PI) * 80 + Math.sin(time * 0.5 + Math.PI) * 40;
-                // Limited rotation for camera (oscillates between -45 and 45 degrees)
                 instagramCamera.rotation.y = Math.sin(time * 0.5) * Math.PI / 4;
             } else {
                 instaNewX = instagramCamera.position.x;
                 instaNewY = instagramCamera.position.y;
             }
 
-            // Calculate distance between objects
             const dx = cloudNewX - instaNewX;
             const dy = cloudNewY - instaNewY;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
-            // If objects are too close
             const minDistance = 60;
             
             if (distance < minDistance) {
-                // Apply repulsion force
                 const angle = Math.atan2(dy, dx);
                 const repulsionForce = (minDistance - distance) / minDistance;
                 
@@ -261,7 +259,6 @@
                 }
             }
             
-            // Update positions
             if (!animationPaused) {
                 cloud.position.x = cloudNewX;
                 cloud.position.y = cloudNewY;
