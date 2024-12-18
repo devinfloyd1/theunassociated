@@ -124,7 +124,7 @@
             githubCat.traverse((child) => {
                 if (child.isMesh) {
                     child.material = new THREE.MeshStandardMaterial({
-                        color: 0x333333,
+                        color: 0xa200ff,
                         metalness: 0.5,
                         roughness: 0.7,
                         emissive: 0x111111,
@@ -132,7 +132,7 @@
                     });
                 }
             });
-            githubCat.scale.set(3, 3, 3);
+            githubCat.scale.set(25, 25, 25);
             githubCat.position.set(50, -50, 0);
             scene.add(githubCat);
         });
@@ -164,7 +164,7 @@
         if (githubCat) {
             const intersects = raycaster.intersectObjects(githubCat.children, true);
             if (intersects.length > 0) {
-                window.open('https://github.com/yourusername', '_blank');
+                window.open('https://github.com/devinfloyd1', '_blank');
             }
         }
     }
