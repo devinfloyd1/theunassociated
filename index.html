@@ -123,14 +123,13 @@
             githubCat = gltf.scene;
             githubCat.traverse((child) => {
                 if (child.isMesh) {
-                    const gradientMaterial = new THREE.MeshStandardMaterial({
-                        metalness: 0.6,
-                        roughness: 0.4,
-                        emissiveIntensity: 0.3
+                    child.material = new THREE.MeshStandardMaterial({
+                        color: 0x333333,
+                        metalness: 0.5,
+                        roughness: 0.7,
+                        emissive: 0x111111,
+                        emissiveIntensity: 0.2
                     });
-                    const texture = new THREE.TextureLoader().load('gradient-purple.png'); // Assuming gradient texture
-                    gradientMaterial.map = texture;
-                    child.material = gradientMaterial;
                 }
             });
             githubCat.scale.set(3, 3, 3);
@@ -177,7 +176,6 @@
         if (cloud) {
             let cloudNewX = Math.sin(time * 0.15) * 150 + Math.sin(time * 0.35) * 50;
             let cloudNewY = Math.cos(time * 0.2) * 80 + Math.sin(time * 0.3) * 40;
-            cloudNewY = Math.max(cloudNewY, -40); // Constrain Y
 
             if (!animationPaused) {
                 cloud.position.x = cloudNewX;
@@ -189,7 +187,6 @@
         if (instagramCamera) {
             let instaNewX = Math.sin(time * 0.2 + Math.PI) * 150 + Math.sin(time * 0.3 + Math.PI) * 50;
             let instaNewY = Math.cos(time * 0.15 + Math.PI) * 80 + Math.sin(time * 0.25 + Math.PI) * 40;
-            instaNewY = Math.max(instaNewY, -40); // Constrain Y
 
             if (!instagramAnimationPaused) {
                 instagramCamera.position.x = instaNewX;
@@ -201,7 +198,6 @@
         if (githubCat) {
             let catNewX = Math.sin(time * 0.18) * 120 + Math.sin(time * 0.28) * 40;
             let catNewY = Math.cos(time * 0.22) * 70 + Math.sin(time * 0.32) * 30;
-            catNewY = Math.max(catNewY, -40); // Constrain Y
 
             githubCat.position.x = catNewX;
             githubCat.position.y = catNewY;
