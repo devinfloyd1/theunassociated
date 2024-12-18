@@ -125,7 +125,7 @@
                     });
                 }
             });
-            instagramCamera.scale.set(20, 20, 20);
+            instagramCamera.scale.set(30, 30, 30); // Updated scale
             instagramCamera.position.set(100, -50, 0);
             scene.add(instagramCamera);
             updateLinkPosition(instagramCamera, 'instagram-link');
@@ -144,7 +144,6 @@
 
         raycaster.setFromCamera(mouse, camera);
         
-        // Check cloud hover
         if (cloud) {
             const cloudIntersects = raycaster.intersectObjects(cloud.children, true);
             if (cloudIntersects.length > 0) {
@@ -170,7 +169,6 @@
             }
         }
 
-        // Check Instagram camera hover
         if (instagramCamera) {
             const instaIntersects = raycaster.intersectObjects(instagramCamera.children, true);
             if (instaIntersects.length > 0) {
@@ -220,9 +218,10 @@
         if (cloud && instagramCamera) {
             let cloudNewX, cloudNewY, instaNewX, instaNewY;
             
+            // Slower movement speeds
             if (!animationPaused) {
-                cloudNewX = Math.sin(time * 0.3) * 150 + Math.sin(time * 0.7) * 50;
-                cloudNewY = Math.cos(time * 0.4) * 80 + Math.sin(time * 0.6) * 40;
+                cloudNewX = Math.sin(time * 0.15) * 150 + Math.sin(time * 0.35) * 50;
+                cloudNewY = Math.cos(time * 0.2) * 80 + Math.sin(time * 0.3) * 40;
                 cloud.rotation.y += 0.005;
             } else {
                 cloudNewX = cloud.position.x;
@@ -230,19 +229,43 @@
             }
             
             if (!instagramAnimationPaused) {
-                instaNewX = Math.sin(time * 0.4 + Math.PI) * 150 + Math.sin(time * 0.6 + Math.PI) * 50;
-                instaNewY = Math.cos(time * 0.3 + Math.PI) * 80 + Math.sin(time * 0.5 + Math.PI) * 40;
-                instagramCamera.rotation.y = Math.sin(time * 0.5) * Math.PI / 4;
+                instaNewX = Math.sin(time * 0.2 + Math.PI) * 150 + Math.sin(time * 0.3 + Math.PI) * 50;
+                instaNewY = Math.cos(time * 0.15 + Math.PI) * 80 + Math.sin(time * 0.25 + Math.PI) * 40;
+                instagramCamera.rotation.y = Math.sin(time * 0.25) * Math.PI / 4;
             } else {
                 instaNewX = instagramCamera.position.x;
                 instaNewY = instagramCamera.position.y;
             }
 
+            // Boundary constraints
+            const bounds = {
+                minX: -window.innerWidth / 4,
+                maxX: window.innerWidth / 4,
+                minY: -window.innerHeight / 4,
+                maxY: window.innerHeight / 4
+            };
+
+            // Apply bounds with bounce effect
+            if (!animationPaused) {
+                if (cloudNewX < bounds.minX) cloudNewX = bounds.minX + Math.abs(cloudNewX - bounds.minX);
+                if (cloudNewX > bounds.maxX) cloudNewX = bounds.maxX - Math.abs(cloudNewX - bounds.maxX);
+                if (cloudNewY < bounds.minY) cloudNewY = bounds.minY + Math.abs(cloudNewY - bounds.minY);
+                if (cloudNewY > bounds.maxY) cloudNewY = bounds.maxY - Math.abs(cloudNewY - bounds.maxY);
+            }
+
+            if (!instagramAnimationPaused) {
+                if (instaNewX < bounds.minX) instaNewX = bounds.minX + Math.abs(instaNewX - bounds.minX);
+                if (instaNewX > bounds.maxX) instaNewX = bounds.maxX - Math.abs(instaNewX - bounds.maxX);
+                if (instaNewY < bounds.minY) instaNewY = bounds.minY + Math.abs(instaNewY - bounds.minY);
+                if (instaNewY > bounds.maxY) instaNewY = bounds.maxY - Math.abs(instaNewY - bounds.maxY);
+            }
+
+            // Collision detection
             const dx = cloudNewX - instaNewX;
             const dy = cloudNewY - instaNewY;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
-            const minDistance = 60;
+            const minDistance = 100; // Increased for larger models
             
             if (distance < minDistance) {
                 const angle = Math.atan2(dy, dx);
@@ -259,6 +282,7 @@
                 }
             }
             
+            // Update positions
             if (!animationPaused) {
                 cloud.position.x = cloudNewX;
                 cloud.position.y = cloudNewY;
