@@ -58,6 +58,8 @@
     const clock = new THREE.Clock();
     let isHovered = false;
     let animationPaused = false;
+    let isInstagramHovered = false;
+    let instagramAnimationPaused = false;
 
     function init() {
         scene = new THREE.Scene();
@@ -78,6 +80,17 @@
         // Load SoundCloud cloud model
         loader.load('cloud-8515988.glb', (gltf) => {
             cloud = gltf.scene;
+            cloud.traverse((child) => {
+                if (child.isMesh) {
+                    child.material = new THREE.MeshStandardMaterial({
+                        color: 0xff5500,
+                        metalness: 0.3,
+                        roughness: 0.4,
+                        emissive: 0xff3300,
+                        emissiveIntensity: 0.2
+                    });
+                }
+            });
             cloud.scale.set(5, 5, 5);
             cloud.position.set(-100, 50, 0);
             scene.add(cloud);
@@ -87,7 +100,19 @@
         // Load Instagram camera model
         loader.load('camera1.glb', (gltf) => {
             instagramCamera = gltf.scene;
-            instagramCamera.scale.set(30, 30, 30);
+            instagramCamera.traverse((child) => {
+                if (child.isMesh) {
+                    child.material = new THREE.MeshStandardMaterial({
+                        color: 0x00a2ff,  // Bright blue base
+                        metalness: 0.7,    // Increased metalness
+                        roughness: 0.2,    // Lower roughness for shine
+                        emissive: 0x0066cc, // Darker blue emissive
+                        emissiveIntensity: 0.2,
+                        envMapIntensity: 1.5
+                    });
+                }
+            });
+            instagramCamera.scale.set(30, 30, 30); // Updated scale
             instagramCamera.position.set(100, -50, 0);
             scene.add(instagramCamera);
             updateLinkPosition(instagramCamera, 'instagram-link');
@@ -102,6 +127,8 @@
                         color: 0x333333,
                         metalness: 0.5,
                         roughness: 0.7,
+                        emissive: 0x111111,
+                        emissiveIntensity: 0.2
                     });
                 }
             });
@@ -131,15 +158,35 @@
 
     function animate() {
         requestAnimationFrame(animate);
+        const time = clock.getElapsedTime();
 
         if (cloud) {
-            cloud.rotation.y += 0.005;
+            let cloudNewX = Math.sin(time * 0.15) * 150 + Math.sin(time * 0.35) * 50;
+            let cloudNewY = Math.cos(time * 0.2) * 80 + Math.sin(time * 0.3) * 40;
+
+            if (!animationPaused) {
+                cloud.position.x = cloudNewX;
+                cloud.position.y = cloudNewY;
+                cloud.rotation.y += 0.005;
+                updateLinkPosition(cloud, 'soundcloud-link');
+            }
         }
+
         if (instagramCamera) {
-            instagramCamera.rotation.y += 0.005;
+            let instaNewX = Math.sin(time * 0.2 + Math.PI) * 150 + Math.sin(time * 0.3 + Math.PI) * 50;
+            let instaNewY = Math.cos(time * 0.15 + Math.PI) * 80 + Math.sin(time * 0.25 + Math.PI) * 40;
+
+            if (!instagramAnimationPaused) {
+                instagramCamera.position.x = instaNewX;
+                instagramCamera.position.y = instaNewY;
+                instagramCamera.rotation.y = Math.sin(time * 0.25) * Math.PI / 4;
+                updateLinkPosition(instagramCamera, 'instagram-link');
+            }
         }
+
         if (githubCat) {
-            githubCat.rotation.y += 0.005;
+            githubCat.rotation.y += 0.01;
+            updateLinkPosition(githubCat, 'github-link');
         }
 
         renderer.render(scene, camera);
