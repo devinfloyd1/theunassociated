@@ -4,15 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Devin Floyd - Portfolio</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
         body {
             margin: 0;
-            height: 100vh;
             background: #f5f5f5;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: Arial, sans-serif;
             overflow: hidden;
         }
         canvas {
@@ -23,166 +21,125 @@
         }
         .container {
             position: relative;
-            width: 100vw;
-            height: 100vh;
-            z-index: 2;
-            pointer-events: none;
-        }
-        .name {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 3rem;
-            font-weight: bold;
-            color: #333;
+            width: 100%;
+            height: 100%;
         }
         #soundcloud-link, #instagram-link, #github-link {
             position: absolute;
-            width: 120px;
-            height: 120px;
-            cursor: pointer;
+            width: 80px;
+            height: 80px;
             pointer-events: auto;
+            z-index: 10;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1 class="name">Devin Floyd</h1>
-        
-        <a id="soundcloud-link" href="https://soundcloud.com/devinfloyd?utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing" target="_blank"></a>
-        
+        <a id="soundcloud-link" href="https://soundcloud.com/devinfloyd" target="_blank"></a>
         <a id="instagram-link" href="https://www.instagram.com/theunassociated/" target="_blank"></a>
-        
         <a id="github-link" href="https://github.com/devinfloyd1" target="_blank"></a>
     </div>
-
     <script>
-    let scene, camera, renderer, cloud, instagramCamera, githubCat;
-    const clock = new THREE.Clock();
+        let scene, camera, renderer;
+        let cloud, instagramCamera, githubCat;
+        const clock = new THREE.Clock();
+        const models = [];
 
-    function init() {
-        scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setClearColor(0xf5f5f5, 1);
-        document.body.insertBefore(renderer.domElement, document.body.firstChild);
+        function init() {
+            // Setup Three.js scene
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(10, 10, 10);
-        scene.add(directionalLight);
+            camera.position.z = 300;
 
-        const loader = new THREE.GLTFLoader();
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
 
-        // Load SoundCloud cloud
-        loader.load('cloud-8515988.glb', (gltf) => {
-            cloud = gltf.scene;
-            cloud.traverse((child) => {
-                if (child.isMesh) {
-                    child.material = new THREE.MeshStandardMaterial({
-                        color: 0xff5500,
-                        metalness: 0.3,
-                        roughness: 0.4,
-                        emissive: 0xff3300,
-                        emissiveIntensity: 0.2
-                    });
-                }
+            const loader = new THREE.GLTFLoader();
+
+            // Load cloud model (SoundCloud)
+            loader.load('cloud-8515988.glb', (gltf) => {
+                cloud = gltf.scene;
+                cloud.scale.set(5, 5, 5);
+                cloud.position.set(-150, 100, 0);
+                models.push({ object: cloud, link: 'soundcloud-link' });
+                scene.add(cloud);
             });
-            cloud.scale.set(5, 5, 5);
-            cloud.position.set(-100, 50, 0);
-            scene.add(cloud);
-            updateLinkPosition(cloud, 'soundcloud-link');
+
+            // Load Instagram camera model
+            loader.load('camera1.glb', (gltf) => {
+                instagramCamera = gltf.scene;
+                instagramCamera.scale.set(7, 7, 7);
+                instagramCamera.position.set(100, -100, 0);
+                models.push({ object: instagramCamera, link: 'instagram-link' });
+                scene.add(instagramCamera);
+            });
+
+            // Load GitHub cat model
+            loader.load('cat.glb', (gltf) => {
+                githubCat = gltf.scene;
+                githubCat.traverse((child) => {
+                    if (child.isMesh) {
+                        child.material.color.set(0x800080); // Gradient purple
+                    }
+                });
+                githubCat.scale.set(10, 10, 10);
+                githubCat.position.set(0, 50, 0);
+                models.push({ object: githubCat, link: 'github-link' });
+                scene.add(githubCat);
+            });
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = clock.getElapsedTime();
+
+            // Move models in smooth sine wave patterns
+            if (cloud) {
+                cloud.position.x = Math.sin(time) * 150 - 100;
+                cloud.position.y = Math.cos(time) * 100;
+            }
+
+            if (instagramCamera) {
+                instagramCamera.position.x = Math.cos(time + Math.PI / 2) * 150 + 50;
+                instagramCamera.position.y = Math.sin(time + Math.PI / 2) * 100;
+            }
+
+            if (githubCat) {
+                githubCat.position.x = Math.sin(time - Math.PI / 2) * 200;
+                githubCat.position.y = Math.cos(time - Math.PI / 2) * 150 - 50;
+            }
+
+            // Update link positions
+            models.forEach((model) => {
+                const vector = new THREE.Vector3();
+                model.object.getWorldPosition(vector);
+                vector.project(camera);
+
+                const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                const y = (-(vector.y * 0.5) + 0.5) * window.innerHeight;
+
+                const link = document.getElementById(model.link);
+                link.style.transform = `translate(${x - 30}px, ${y - 30}px)`;
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // Load Instagram camera
-        loader.load('camera1.glb', (gltf) => {
-            instagramCamera = gltf.scene;
-            instagramCamera.traverse((child) => {
-                if (child.isMesh) {
-                    child.material = new THREE.MeshStandardMaterial({
-                        color: 0x00a2ff,
-                        metalness: 0.7,
-                        roughness: 0.2,
-                        emissive: 0x0066cc,
-                        emissiveIntensity: 0.2
-                    });
-                }
-            });
-            instagramCamera.scale.set(10, 10, 10);
-            instagramCamera.position.set(100, -50, 0);
-            scene.add(instagramCamera);
-            updateLinkPosition(instagramCamera, 'instagram-link');
-        });
-
-        // Load GitHub cat
-        loader.load('cat.glb', (gltf) => {
-            githubCat = gltf.scene;
-            githubCat.traverse((child) => {
-                if (child.isMesh) {
-                    child.material = new THREE.MeshStandardMaterial({
-                        color: 0x000000,
-                        metalness: 0.5,
-                        roughness: 0.5,
-                        emissive: 0x333333,
-                        emissiveIntensity: 0.1
-                    });
-                }
-            });
-            githubCat.scale.set(10, 10, 10);
-            githubCat.position.set(0, -50, 0);
-            scene.add(githubCat);
-            updateLinkPosition(githubCat, 'github-link');
-        });
-
-        camera.position.z = 150;
-        animate();
-    }
-
-    function updateLinkPosition(model, linkId) {
-        if (model) {
-            const vector = new THREE.Vector3();
-            model.getWorldPosition(vector);
-            vector.project(camera);
-            
-            const link = document.getElementById(linkId);
-            const x = (vector.x * .5 + .5) * window.innerWidth;
-            const y = (-(vector.y * .5) + .5) * window.innerHeight;
-            
-            link.style.transform = `translate(${x - 10}px, ${y - 10}px)`;
-        }
-    }
-
-    function animate() {
-        requestAnimationFrame(animate);
-
-        const time = clock.getElapsedTime();
-
-        if (cloud) {
-            cloud.rotation.y += 0.005;
-            updateLinkPosition(cloud, 'soundcloud-link');
-        }
-        if (instagramCamera) {
-            instagramCamera.rotation.y += 0.01;
-            updateLinkPosition(instagramCamera, 'instagram-link');
-        }
-        if (githubCat) {
-            githubCat.rotation.y += 0.01;
-            updateLinkPosition(githubCat, 'github-link');
-        }
-
-        renderer.render(scene, camera);
-    }
-
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    init();
+        init();
     </script>
 </body>
 </html>
