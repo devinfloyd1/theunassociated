@@ -88,10 +88,9 @@
         directionalLight.position.set(10, 10, 10);
         scene.add(directionalLight);
 
-        // Load both models
         const loader = new THREE.GLTFLoader();
         
-        // Load cloud
+        // Load cloud with SoundCloud orange color
         loader.load('cloud-8515988.glb', (gltf) => {
             cloud = gltf.scene;
             cloud.traverse((child) => {
@@ -106,26 +105,27 @@
                 }
             });
             cloud.scale.set(5, 5, 5);
+            cloud.position.set(-100, 50, 0); // Start left side
             scene.add(cloud);
             updateLinkPosition(cloud, 'soundcloud-link');
         });
 
-        // Load Instagram camera
+        // Load Instagram camera with its original colors but add emissive for hover
         loader.load('camera.glb', (gltf) => {
             instagramCamera = gltf.scene;
             instagramCamera.traverse((child) => {
                 if (child.isMesh) {
+                    const originalMaterial = child.material;
                     child.material = new THREE.MeshStandardMaterial({
-                        color: 0xE1306C, // Instagram pink
-                        metalness: 0.4,
-                        roughness: 0.3,
-                        emissive: 0xFCAF45, // Instagram yellow/orange
+                        metalness: 0.3,
+                        roughness: 0.4,
+                        emissive: 0xffffff,
                         emissiveIntensity: 0.2
                     });
                 }
             });
             instagramCamera.scale.set(5, 5, 5);
-            instagramCamera.position.x = 100; // Offset position
+            instagramCamera.position.set(100, -50, 0); // Start right side
             scene.add(instagramCamera);
             updateLinkPosition(instagramCamera, 'instagram-link');
         });
@@ -214,20 +214,64 @@
         requestAnimationFrame(animate);
         const time = clock.getElapsedTime();
         
-        // Animate cloud
-        if (cloud && !animationPaused) {
-            cloud.rotation.y += 0.005;
-            cloud.position.x = Math.sin(time * 0.3) * 150 + Math.sin(time * 0.7) * 50;
-            cloud.position.y = Math.cos(time * 0.4) * 80 + Math.sin(time * 0.6) * 40;
-            updateLinkPosition(cloud, 'soundcloud-link');
-        }
-        
-        // Animate Instagram camera (slightly different pattern)
-        if (instagramCamera && !instagramAnimationPaused) {
-            instagramCamera.rotation.y += 0.005;
-            instagramCamera.position.x = Math.sin(time * 0.4) * 150 + Math.sin(time * 0.6) * 50;
-            instagramCamera.position.y = Math.cos(time * 0.3) * 80 + Math.sin(time * 0.5) * 40;
-            updateLinkPosition(instagramCamera, 'instagram-link');
+        // Calculate new positions
+        if (cloud && instagramCamera) {
+            let cloudNewX, cloudNewY, instaNewX, instaNewY;
+            
+            if (!animationPaused) {
+                cloudNewX = Math.sin(time * 0.3) * 150 + Math.sin(time * 0.7) * 50;
+                cloudNewY = Math.cos(time * 0.4) * 80 + Math.sin(time * 0.6) * 40;
+                cloud.rotation.y += 0.005;
+            } else {
+                cloudNewX = cloud.position.x;
+                cloudNewY = cloud.position.y;
+            }
+            
+            if (!instagramAnimationPaused) {
+                instaNewX = Math.sin(time * 0.4 + Math.PI) * 150 + Math.sin(time * 0.6 + Math.PI) * 50;
+                instaNewY = Math.cos(time * 0.3 + Math.PI) * 80 + Math.sin(time * 0.5 + Math.PI) * 40;
+                instagramCamera.rotation.y += 0.005;
+            } else {
+                instaNewX = instagramCamera.position.x;
+                instaNewY = instagramCamera.position.y;
+            }
+
+            // Calculate distance between objects
+            const dx = cloudNewX - instaNewX;
+            const dy = cloudNewY - instaNewY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // If objects are too close
+            const minDistance = 60;
+            
+            if (distance < minDistance) {
+                // Apply repulsion force
+                const angle = Math.atan2(dy, dx);
+                const repulsionForce = (minDistance - distance) / minDistance;
+                
+                if (!animationPaused) {
+                    cloudNewX += Math.cos(angle) * repulsionForce * 20;
+                    cloudNewY += Math.sin(angle) * repulsionForce * 20;
+                }
+                
+                if (!instagramAnimationPaused) {
+                    instaNewX -= Math.cos(angle) * repulsionForce * 20;
+                    instaNewY -= Math.sin(angle) * repulsionForce * 20;
+                }
+            }
+            
+            // Update positions
+            if (!animationPaused) {
+                cloud.position.x = cloudNewX;
+                cloud.position.y = cloudNewY;
+                updateLinkPosition(cloud, 'soundcloud-link');
+            }
+            
+            if (!instagramAnimationPaused) {
+                instagramCamera.position.x = instaNewX;
+                instagramCamera.position.y = instaNewY;
+                updateLinkPosition(instagramCamera, 'instagram-link');
+            }
         }
         
         renderer.render(scene, camera);
