@@ -59,9 +59,7 @@
         
         <a id="soundcloud-link" href="https://soundcloud.com/devinfloyd?utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing" target="_blank"></a>
         
-        <a href="https://instagram.com/yourusername" target="_blank">
-            <img class="icon" style="top: 40%; right: 25%;" src="/api/placeholder/60/60" alt="Instagram">
-        </a>
+        <a id="instagram-link" href="https://www.instagram.com/theunassociated/" target="_blank"></a>
         
         <a href="https://github.com/yourusername" target="_blank">
             <img class="icon" style="bottom: 30%; left: 35%;" src="/api/placeholder/60/60" alt="GitHub">
@@ -69,34 +67,26 @@
     </div>
 
     <script>
-    let scene, camera, renderer, cloud;
+    let scene, camera, renderer, cloud, instagramCamera;
     const clock = new THREE.Clock();
-    // Add these new variables
     let isHovered = false;
     let animationPaused = false;
+    let isInstagramHovered = false;
+    let instagramAnimationPaused = false;
 
     function init() {
-        scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setClearColor(0xf5f5f5, 1);
-        document.body.insertBefore(renderer.domElement, document.body.firstChild);
+        // Previous scene setup remains same until loader
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(10, 10, 10);
-        scene.add(directionalLight);
-
+        // Load both models
         const loader = new THREE.GLTFLoader();
+        
+        // Load cloud
         loader.load('cloud-8515988.glb', (gltf) => {
             cloud = gltf.scene;
             cloud.traverse((child) => {
                 if (child.isMesh) {
-                    // Updated material with SoundCloud orange
                     child.material = new THREE.MeshStandardMaterial({
-                        color: 0xff5500,  // SoundCloud orange
+                        color: 0xff5500,
                         metalness: 0.3,
                         roughness: 0.4,
                         emissive: 0xff3300,
@@ -106,20 +96,34 @@
             });
             cloud.scale.set(5, 5, 5);
             scene.add(cloud);
-            updateLinkPosition();
-        }, 
-        (xhr) => {
-            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-        },
-        (error) => {
-            console.error('An error happened loading the model:', error);
+            updateLinkPosition(cloud, 'soundcloud-link');
+        });
+
+        // Load Instagram camera
+        loader.load('camera.glb', (gltf) => {
+            instagramCamera = gltf.scene;
+            instagramCamera.traverse((child) => {
+                if (child.isMesh) {
+                    // Instagram gradient-like effect
+                    child.material = new THREE.MeshStandardMaterial({
+                        color: 0xE1306C, // Instagram pink
+                        metalness: 0.4,
+                        roughness: 0.3,
+                        emissive: 0xFCAF45, // Instagram yellow/orange
+                        emissiveIntensity: 0.2
+                    });
+                }
+            });
+            instagramCamera.scale.set(5, 5, 5);
+            instagramCamera.position.x = 100; // Offset position
+            scene.add(instagramCamera);
+            updateLinkPosition(instagramCamera, 'instagram-link');
         });
 
         camera.position.z = 150;
         animate();
     }
 
-    // Add hover detection
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
@@ -128,10 +132,11 @@
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
         raycaster.setFromCamera(mouse, camera);
+        
+        // Check cloud hover
         if (cloud) {
-            const intersects = raycaster.intersectObjects(cloud.children, true);
-            
-            if (intersects.length > 0) {
+            const cloudIntersects = raycaster.intersectObjects(cloud.children, true);
+            if (cloudIntersects.length > 0) {
                 if (!isHovered) {
                     isHovered = true;
                     animationPaused = true;
@@ -153,15 +158,41 @@
                 }
             }
         }
+
+        // Check Instagram camera hover
+        if (instagramCamera) {
+            const instaIntersects = raycaster.intersectObjects(instagramCamera.children, true);
+            if (instaIntersects.length > 0) {
+                if (!isInstagramHovered) {
+                    isInstagramHovered = true;
+                    instagramAnimationPaused = true;
+                    instagramCamera.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material.emissiveIntensity = 0.6;
+                        }
+                    });
+                }
+            } else {
+                if (isInstagramHovered) {
+                    isInstagramHovered = false;
+                    instagramAnimationPaused = false;
+                    instagramCamera.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material.emissiveIntensity = 0.2;
+                        }
+                    });
+                }
+            }
+        }
     });
 
-    function updateLinkPosition() {
-        if (cloud) {
+    function updateLinkPosition(model, linkId) {
+        if (model) {
             const vector = new THREE.Vector3();
-            cloud.getWorldPosition(vector);
+            model.getWorldPosition(vector);
             vector.project(camera);
             
-            const link = document.getElementById('soundcloud-link');
+            const link = document.getElementById(linkId);
             const x = (vector.x * .5 + .5) * window.innerWidth;
             const y = (-(vector.y * .5) + .5) * window.innerHeight;
             
@@ -171,21 +202,22 @@
 
     function animate() {
         requestAnimationFrame(animate);
+        const time = clock.getElapsedTime();
         
+        // Animate cloud
         if (cloud && !animationPaused) {
-            const time = clock.getElapsedTime();
-            
             cloud.rotation.y += 0.005;
-            
-            cloud.position.x = 
-                Math.sin(time * 0.3) * 150 +
-                Math.sin(time * 0.7) * 50;
-                
-            cloud.position.y = 
-                Math.cos(time * 0.4) * 80 +
-                Math.sin(time * 0.6) * 40;
-            
-            updateLinkPosition();
+            cloud.position.x = Math.sin(time * 0.3) * 150 + Math.sin(time * 0.7) * 50;
+            cloud.position.y = Math.cos(time * 0.4) * 80 + Math.sin(time * 0.6) * 40;
+            updateLinkPosition(cloud, 'soundcloud-link');
+        }
+        
+        // Animate Instagram camera (slightly different pattern)
+        if (instagramCamera && !instagramAnimationPaused) {
+            instagramCamera.rotation.y += 0.005;
+            instagramCamera.position.x = Math.sin(time * 0.4) * 150 + Math.sin(time * 0.6) * 50;
+            instagramCamera.position.y = Math.cos(time * 0.3) * 80 + Math.sin(time * 0.5) * 40;
+            updateLinkPosition(instagramCamera, 'instagram-link');
         }
         
         renderer.render(scene, camera);
@@ -198,6 +230,6 @@
     });
 
     init();
-</script>
+    </script>
 </body>
 </html>
