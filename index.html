@@ -15,11 +15,13 @@
             background: white;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             overflow: hidden;
+            perspective: 1000px;
         }
         .container {
             position: relative;
             width: 100vw;
             height: 100vh;
+            transform-style: preserve-3d;
         }
         .name {
             position: absolute;
@@ -43,9 +45,11 @@
             height: 120px;
             top: 30%;
             left: 25%;
-            /* New orange gradient effect */
-            filter: sepia(100%) hue-rotate(-50deg) saturate(200%) brightness(120%);
-            -webkit-filter: sepia(100%) hue-rotate(-50deg) saturate(200%) brightness(120%);
+            transform-style: preserve-3d;
+            backface-visibility: visible;
+            /* Adjusted for more vibrant orange */
+            filter: sepia(100%) hue-rotate(-30deg) saturate(300%) brightness(140%);
+            -webkit-filter: sepia(100%) hue-rotate(-30deg) saturate(300%) brightness(140%);
         }
 
         #soundcloud:hover {
@@ -53,9 +57,9 @@
         }
 
         @keyframes glowPulse {
-            0% { filter: sepia(100%) hue-rotate(-50deg) saturate(200%) brightness(120%); }
-            50% { filter: sepia(100%) hue-rotate(-50deg) saturate(250%) brightness(140%); }
-            100% { filter: sepia(100%) hue-rotate(-50deg) saturate(200%) brightness(120%); }
+            0% { filter: sepia(100%) hue-rotate(-30deg) saturate(300%) brightness(140%); }
+            50% { filter: sepia(100%) hue-rotate(-30deg) saturate(400%) brightness(160%); }
+            100% { filter: sepia(100%) hue-rotate(-30deg) saturate(300%) brightness(140%); }
         }
         
         #instagram {
@@ -92,30 +96,33 @@
         // Create a continuous spinning animation
         gsap.to('#soundcloud', {
             duration: 8,
-            rotationY: 360,  // This makes it spin around its Y axis (like a carousel)
+            rotationY: 360,
             repeat: -1,
-            ease: "none"
+            ease: "none",
+            transformPerspective: 1000,
+            transformStyle: "preserve-3d"
         });
 
-        // Separate animation for the floating movement
+        // Larger, more dynamic floating movement
         gsap.to('#soundcloud', {
-            duration: 30,
+            duration: 40,
             motionPath: {
                 path: [
-                    {x: 0, y: 0},      // Starting position
-                    {x: 200, y: -100},  // Top right
-                    {x: 400, y: 0},     // Right
-                    {x: 200, y: 100},   // Bottom right
-                    {x: 0, y: 200},     // Bottom
-                    {x: -200, y: 100},  // Bottom left
-                    {x: -400, y: 0},    // Left
-                    {x: -200, y: -100}, // Top left
-                    {x: 0, y: 0}        // Back to start
+                    {x: 0, y: 0},         // Center
+                    {x: 400, y: -200},    // Top right
+                    {x: 600, y: 0},       // Far right
+                    {x: 400, y: 200},     // Bottom right
+                    {x: 0, y: 300},       // Bottom
+                    {x: -400, y: 200},    // Bottom left
+                    {x: -600, y: 0},      // Far left
+                    {x: -400, y: -200},   // Top left
+                    {x: 0, y: -300},      // Top
+                    {x: 0, y: 0}          // Back to center
                 ],
                 curviness: 2,
                 autoRotate: false
             },
-            ease: "none",
+            ease: "power1.inOut",
             repeat: -1
         });
 
