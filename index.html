@@ -111,7 +111,7 @@
         });
 
         // Load Instagram camera with its original colors but add emissive for hover
-        loader.load('camera.glb', (gltf) => {
+        loader.load('camera1.glb', (gltf) => {
             instagramCamera = gltf.scene;
             instagramCamera.traverse((child) => {
                 if (child.isMesh) {
@@ -230,7 +230,8 @@
             if (!instagramAnimationPaused) {
                 instaNewX = Math.sin(time * 0.4 + Math.PI) * 150 + Math.sin(time * 0.6 + Math.PI) * 50;
                 instaNewY = Math.cos(time * 0.3 + Math.PI) * 80 + Math.sin(time * 0.5 + Math.PI) * 40;
-                instagramCamera.rotation.y += 0.005;
+                // Limited rotation for camera (oscillates between -45 and 45 degrees)
+                instagramCamera.rotation.y = Math.sin(time * 0.5) * Math.PI / 4;
             } else {
                 instaNewX = instagramCamera.position.x;
                 instaNewY = instagramCamera.position.y;
