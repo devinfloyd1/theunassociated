@@ -69,10 +69,6 @@
     const clock = new THREE.Clock();
     let isHovered = false;
     let animationPaused = false;
-    let isInstagramHovered = false;
-    let instagramAnimationPaused = false;
-    let isGitHubHovered = false;
-    let githubAnimationPaused = false;
 
     function init() {
         scene = new THREE.Scene();
@@ -89,8 +85,8 @@
         scene.add(directionalLight);
 
         const loader = new THREE.GLTFLoader();
-        
-        // Load cloud with SoundCloud orange color
+
+        // Load SoundCloud cloud
         loader.load('cloud-8515988.glb', (gltf) => {
             cloud = gltf.scene;
             cloud.traverse((child) => {
@@ -110,43 +106,42 @@
             updateLinkPosition(cloud, 'soundcloud-link');
         });
 
-        // Load Instagram camera with futuristic blue material
+        // Load Instagram camera
         loader.load('camera1.glb', (gltf) => {
             instagramCamera = gltf.scene;
             instagramCamera.traverse((child) => {
                 if (child.isMesh) {
                     child.material = new THREE.MeshStandardMaterial({
-                        color: 0x00a2ff,  // Bright blue base
-                        metalness: 0.7,    // Increased metalness
-                        roughness: 0.2,    // Lower roughness for shine
-                        emissive: 0x0066cc, // Darker blue emissive
-                        emissiveIntensity: 0.2,
-                        envMapIntensity: 1.5
+                        color: 0x00a2ff,
+                        metalness: 0.7,
+                        roughness: 0.2,
+                        emissive: 0x0066cc,
+                        emissiveIntensity: 0.2
                     });
                 }
             });
-            instagramCamera.scale.set(30, 30, 30); // Updated scale
+            instagramCamera.scale.set(30, 30, 30);
             instagramCamera.position.set(100, -50, 0);
             scene.add(instagramCamera);
             updateLinkPosition(instagramCamera, 'instagram-link');
         });
 
-        // Load GitHub cat with original iconscout color
+        // Load GitHub cat
         loader.load('cat.glb', (gltf) => {
             githubCat = gltf.scene;
             githubCat.traverse((child) => {
                 if (child.isMesh) {
                     child.material = new THREE.MeshStandardMaterial({
-                        color: 0x6e5494,  // GitHub purple color from Iconscout
-                        metalness: 0.4,
-                        roughness: 0.3,
-                        emissive: 0x4a3d8f,
-                        emissiveIntensity: 0.2
+                        color: 0x000000,
+                        metalness: 0.5,
+                        roughness: 0.5,
+                        emissive: 0x333333,
+                        emissiveIntensity: 0.1
                     });
                 }
             });
-            githubCat.scale.set(30, 30, 30);
-            githubCat.position.set(-50, 100, 0);
+            githubCat.scale.set(10, 10, 10);
+            githubCat.position.set(0, -50, 0);
             scene.add(githubCat);
             updateLinkPosition(githubCat, 'github-link');
         });
@@ -163,88 +158,29 @@
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
         raycaster.setFromCamera(mouse, camera);
-        
-        // SoundCloud cloud hover effects
-        if (cloud) {
-            const cloudIntersects = raycaster.intersectObjects(cloud.children, true);
-            if (cloudIntersects.length > 0) {
-                if (!isHovered) {
-                    isHovered = true;
-                    animationPaused = true;
-                    cloud.traverse((child) => {
-                        if (child.isMesh) {
-                            child.material.emissiveIntensity = 0.6;
-                        }
-                    });
-                }
-            } else {
-                if (isHovered) {
-                    isHovered = false;
-                    animationPaused = false;
-                    cloud.traverse((child) => {
-                        if (child.isMesh) {
-                            child.material.emissiveIntensity = 0.2;
-                        }
-                    });
-                }
-            }
-        }
 
-        // Instagram camera hover effects
-        if (instagramCamera) {
-            const instaIntersects = raycaster.intersectObjects(instagramCamera.children, true);
-            if (instaIntersects.length > 0) {
-                if (!isInstagramHovered) {
-                    isInstagramHovered = true;
-                    instagramAnimationPaused = true;
-                    instagramCamera.traverse((child) => {
-                        if (child.isMesh) {
-                            child.material.emissiveIntensity = 0.8;
-                            child.material.metalness = 0.9;
-                        }
-                    });
-                }
+        const handleHover = (model, isModelHovered, emissiveIntensity) => {
+            const intersects = raycaster.intersectObjects(model.children, true);
+            if (intersects.length > 0) {
+                model.traverse((child) => {
+                    if (child.isMesh) {
+                        child.material.emissiveIntensity = emissiveIntensity;
+                    }
+                });
+                return true;
             } else {
-                if (isInstagramHovered) {
-                    isInstagramHovered = false;
-                    instagramAnimationPaused = false;
-                    instagramCamera.traverse((child) => {
-                        if (child.isMesh) {
-                            child.material.emissiveIntensity = 0.2;
-                            child.material.metalness = 0.7;
-                        }
-                    });
-                }
+                model.traverse((child) => {
+                    if (child.isMesh) {
+                        child.material.emissiveIntensity = 0.2;
+                    }
+                });
+                return false;
             }
-        }
+        };
 
-        // GitHub cat hover effects
-        if (githubCat) {
-            const githubIntersects = raycaster.intersectObjects(githubCat.children, true);
-            if (githubIntersects.length > 0) {
-                if (!isGitHubHovered) {
-                    isGitHubHovered = true;
-                    githubAnimationPaused = true;
-                    githubCat.traverse((child) => {
-                        if (child.isMesh) {
-                            child.material.emissiveIntensity = 0.8;
-                            child.material.metalness = 0.9;
-                        }
-                    });
-                }
-            } else {
-                if (isGitHubHovered) {
-                    isGitHubHovered = false;
-                    githubAnimationPaused = false;
-                    githubCat.traverse((child) => {
-                        if (child.isMesh) {
-                            child.material.emissiveIntensity = 0.2;
-                            child.material.metalness = 0.4;
-                        }
-                    });
-                }
-            }
-        }
+        if (cloud) isHovered = handleHover(cloud, isHovered, 0.6);
+        if (instagramCamera) isHovered = handleHover(instagramCamera, isHovered, 0.8);
+        if (githubCat) isHovered = handleHover(githubCat, isHovered, 0.4);
     });
 
     function updateLinkPosition(model, linkId) {
@@ -264,125 +200,23 @@
     function animate() {
         requestAnimationFrame(animate);
         const time = clock.getElapsedTime();
-        
-        if (cloud && instagramCamera && githubCat) {
-            let cloudNewX, cloudNewY, instaNewX, instaNewY, githubNewX, githubNewY;
-            
-            // Slower movement speeds
-            if (!animationPaused) {
-                cloudNewX = Math.sin(time * 0.15) * 150 + Math.sin(time * 0.35) * 50;
-                cloudNewY = Math.cos(time * 0.2) * 80 + Math.sin(time * 0.3) * 40;
-                cloud.rotation.y += 0.005;
-            } else {
-                cloudNewX = cloud.position.x;
-                cloudNewY = cloud.position.y;
-            }
-            
-            if (!instagramAnimationPaused) {
-                instaNewX = Math.sin(time * 0.2 + Math.PI) * 150 + Math.sin(time * 0.3 + Math.PI) * 50;
-                instaNewY = Math.cos(time * 0.15 + Math.PI) * 80 + Math.sin(time * 0.25 + Math.PI) * 40;
-                instagramCamera.rotation.y = Math.sin(time * 0.25) * Math.PI / 4;
-            } else {
-                instaNewX = instagramCamera.position.x;
-                instaNewY = instagramCamera.position.y;
-            }
 
-            // GitHub cat movement
-            if (!githubAnimationPaused) {
-                githubNewX = Math.sin(time * 0.25) * 150 + Math.sin(time * 0.35) * 50;
-                githubNewY = Math.cos(time * 0.2) * 80 + Math.sin(time * 0.3) * 40;
-                githubCat.rotation.y = Math.cos(time * 0.25) * Math.PI / 4;
-            } else {
-                githubNewX = githubCat.position.x;
-                githubNewY = githubCat.position.y;
+        const animateModel = (model, xSpeed, ySpeed, zRotation) => {
+            if (model) {
+                model.position.x = Math.sin(time * xSpeed) * 100;
+                model.position.y = Math.cos(time * ySpeed) * 50;
+                model.rotation.y += zRotation;
             }
+        };
 
-            // Boundary constraints
-            const bounds = {
-                minX: -window.innerWidth / 4,
-                maxX: window.innerWidth / 4,
-                minY: -window.innerHeight / 4,
-                maxY: window.innerHeight / 4
-            };
+        animateModel(cloud, 0.15, 0.2, 0.005);
+        animateModel(instagramCamera, 0.2, 0.15, 0.01);
+        animateModel(githubCat, 0.25, 0.2, 0.01);
 
-            // Apply bounds with bounce effect for each object
-            if (!animationPaused) {
-                if (cloudNewX < bounds.minX) cloudNewX = bounds.minX + Math.abs(cloudNewX - bounds.minX);
-                if (cloudNewX > bounds.maxX) cloudNewX = bounds.maxX - Math.abs(cloudNewX - bounds.maxX);
-                if (cloudNewY < bounds.minY) cloudNewY = bounds.minY + Math.abs(cloudNewY - bounds.minY);
-                if (cloudNewY > bounds.maxY) cloudNewY = bounds.maxY - Math.abs(cloudNewY - bounds.maxY);
-            }
+        updateLinkPosition(cloud, 'soundcloud-link');
+        updateLinkPosition(instagramCamera, 'instagram-link');
+        updateLinkPosition(githubCat, 'github-link');
 
-            if (!instagramAnimationPaused) {
-                if (instaNewX < bounds.minX) instaNewX = bounds.minX + Math.abs(instaNewX - bounds.minX);
-                if (instaNewX > bounds.maxX) instaNewX = bounds.maxX - Math.abs(instaNewX - bounds.maxX);
-                if (instaNewY < bounds.minY) instaNewY = bounds.minY + Math.abs(instaNewY - bounds.minY);
-                if (instaNewY > bounds.maxY) instaNewY = bounds.maxY - Math.abs(instaNewY - bounds.maxY);
-            }
-
-            if (!githubAnimationPaused) {
-                if (githubNewX < bounds.minX) githubNewX = bounds.minX + Math.abs(githubNewX - bounds.minX);
-                if (githubNewX > bounds.maxX) githubNewX = bounds.maxX - Math.abs(githubNewX - bounds.maxX);
-                if (githubNewY < bounds.minY) githubNewY = bounds.minY + Math.abs(githubNewY - bounds.minY);
-                if (githubNewY > bounds.maxY) githubNewY = bounds.maxY - Math.abs(githubNewY - bounds.maxY);
-            }
-
-            // Complex collision detection between all three objects
-            const collisionObjects = [
-                { obj: cloud, newX: cloudNewX, newY: cloudNewY, paused: animationPaused },
-                { obj: instagramCamera, newX: instaNewX, newY: instaNewY, paused: instagramAnimationPaused },
-                { obj: githubCat, newX: githubNewX, newY: githubNewY, paused: githubAnimationPaused }
-            ];
-
-            // Collision detection and repulsion
-            for (let i = 0; i < collisionObjects.length; i++) {
-                for (let j = i + 1; j < collisionObjects.length; j++) {
-                    const obj1 = collisionObjects[i];
-                    const obj2 = collisionObjects[j];
-                    
-                    const dx = obj1.newX - obj2.newX;
-                    const dy = obj1.newY - obj2.newY;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    
-                    const minDistance = 150; // Increased for larger models
-                    
-                    if (distance < minDistance) {
-                        const angle = Math.atan2(dy, dx);
-                        const repulsionForce = (minDistance - distance) / minDistance;
-                        
-                        if (!obj1.paused) {
-                            obj1.newX += Math.cos(angle) * repulsionForce * 20;
-                            obj1.newY += Math.sin(angle) * repulsionForce * 20;
-                        }
-                        
-                        if (!obj2.paused) {
-                            obj2.newX -= Math.cos(angle) * repulsionForce * 20;
-                            obj2.newY -= Math.sin(angle) * repulsionForce * 20;
-                        }
-                    }
-                }
-            }
-            
-            // Update positions
-            if (!animationPaused) {
-                cloud.position.x = cloudNewX;
-                cloud.position.y = cloudNewY;
-                updateLinkPosition(cloud, 'soundcloud-link');
-            }
-            
-            if (!instagramAnimationPaused) {
-                instagramCamera.position.x = instaNewX;
-                instagramCamera.position.y = instaNewY;
-                updateLinkPosition(instagramCamera, 'instagram-link');
-            }
-            
-            if (!githubAnimationPaused) {
-                githubCat.position.x = githubNewX;
-                githubCat.position.y = githubNewY;
-                updateLinkPosition(githubCat, 'github-link');
-            }
-        }
-        
         renderer.render(scene, camera);
     }
 
