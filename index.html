@@ -96,7 +96,6 @@
             cloud.scale.set(5, 5, 5);
             cloud.position.set(-100, 50, 0);
             scene.add(cloud);
-            updateLinkPosition(cloud, 'soundcloud-link');
         });
 
         // Load Instagram camera model
@@ -117,7 +116,6 @@
             instagramCamera.scale.set(30, 30, 30); // Updated scale
             instagramCamera.position.set(100, -50, 0);
             scene.add(instagramCamera);
-            updateLinkPosition(instagramCamera, 'instagram-link');
         });
 
         // Load GitHub cat model
@@ -137,25 +135,10 @@
             githubCat.scale.set(3, 3, 3);
             githubCat.position.set(50, -50, 0);
             scene.add(githubCat);
-            updateLinkPosition(githubCat, 'github-link');
         });
 
         camera.position.z = 150;
         animate();
-    }
-
-    function updateLinkPosition(model, linkId) {
-        if (model) {
-            const vector = new THREE.Vector3();
-            model.getWorldPosition(vector);
-            vector.project(camera);
-
-            const link = document.getElementById(linkId);
-            const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
-            const y = (-(vector.y * 0.5) + 0.5) * window.innerHeight;
-
-            link.style.transform = `translate(${x - 10}px, ${y - 10}px)`;
-        }
     }
 
     function onDocumentMouseClick(event) {
@@ -163,6 +146,13 @@
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
         raycaster.setFromCamera(mouse, camera);
+
+        if (cloud) {
+            const intersects = raycaster.intersectObjects(cloud.children, true);
+            if (intersects.length > 0) {
+                window.open('https://soundcloud.com/devinfloyd?utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing', '_blank');
+            }
+        }
 
         if (instagramCamera) {
             const intersects = raycaster.intersectObjects(instagramCamera.children, true);
@@ -184,7 +174,6 @@
                 cloud.position.x = cloudNewX;
                 cloud.position.y = cloudNewY;
                 cloud.rotation.y += 0.005;
-                updateLinkPosition(cloud, 'soundcloud-link');
             }
         }
 
@@ -196,13 +185,11 @@
                 instagramCamera.position.x = instaNewX;
                 instagramCamera.position.y = instaNewY;
                 instagramCamera.rotation.y = Math.sin(time * 0.25) * Math.PI / 4;
-                updateLinkPosition(instagramCamera, 'instagram-link');
             }
         }
 
         if (githubCat) {
             githubCat.rotation.y += 0.01;
-            updateLinkPosition(githubCat, 'github-link');
         }
 
         renderer.render(scene, camera);
@@ -212,18 +199,6 @@
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const githubLink = document.createElement('a');
-        githubLink.id = 'github-link';
-        githubLink.href = 'https://github.com/yourusername';
-        githubLink.target = '_blank';
-        githubLink.style.position = 'absolute';
-        githubLink.style.width = '60px';
-        githubLink.style.height = '60px';
-        githubLink.style.pointerEvents = 'auto';
-        document.body.appendChild(githubLink);
     });
 
     document.addEventListener('click', onDocumentMouseClick);
